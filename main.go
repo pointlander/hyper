@@ -55,6 +55,9 @@ func main() {
 	process := func(device string, output chan uint64) {
 		options := &serial.Mode{
 			BaudRate: 115200,
+			DataBits: 8,
+			Parity:   serial.NoParity,
+			StopBits: serial.OneStopBit,
 		}
 		port, err := serial.Open(device, options)
 		if err != nil {
