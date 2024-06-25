@@ -89,13 +89,13 @@ func main() {
 	}
 
 	output1 := make(chan uint64, 8)
-	event1 := time.Time{}
+	event1 := time.Now()
 	go process("/dev/ttyUSB0", output1)
 	output2 := make(chan uint64, 8)
-	event2 := time.Time{}
+	event2 := time.Now()
 	go process("/dev/ttyUSB1", output2)
 	last := time.Now()
-	var values plotter.Values
+	var values, between plotter.Values
 	for {
 		select {
 		case out, ok := <-output1:
@@ -116,6 +116,7 @@ func main() {
 					values = append(values, float64(event1.Sub(last)))
 					last = event1
 				}
+				between = append(between, float64(diff))
 			}
 		case out, ok := <-output2:
 			if !ok {
@@ -135,6 +136,7 @@ func main() {
 					values = append(values, float64(event2.Sub(last)))
 					last = event2
 				}
+				between = append(between, float64(diff))
 			}
 		}
 		if output1 == nil && output2 == nil {
@@ -152,6 +154,19 @@ func main() {
 	p.Add(hist)
 
 	if err := p.Save(8*vg.Inch, 8*vg.Inch, "hist.png"); err != nil {
+		panic(err)
+	}
+
+	p = plot.New()
+	p.Title.Text = "histogram between plot"
+
+	hist, err = plotter.NewHist(between, 20)
+	if err != nil {
+		panic(err)
+	}
+	p.Add(hist)
+
+	if err := p.Save(8*vg.Inch, 8*vg.Inch, "between.png"); err != nil {
 		panic(err)
 	}
 }
