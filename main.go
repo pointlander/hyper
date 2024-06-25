@@ -11,6 +11,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gopxl/beep"
+	"github.com/gopxl/beep/generators"
+	"github.com/gopxl/beep/speaker"
 	"go.bug.st/serial"
 )
 
@@ -22,6 +25,29 @@ func main() {
 		<-c
 		running = false
 	}()
+
+	sr := beep.SampleRate(48000)
+	speaker.Init(sr, 4800)
+
+	sine, err := generators.SineTone(sr, 17000.0)
+	if err != nil {
+		panic(err)
+	}
+
+	beep := func() {
+		two := sr.N(500 * time.Millisecond)
+
+		ch := make(chan struct{})
+		sounds := []beep.Streamer{
+			beep.Take(two, sine),
+			beep.Callback(func() {
+				ch <- struct{}{}
+			}),
+		}
+		speaker.Play(beep.Seq(sounds...))
+
+		<-ch
+	}
 
 	process := func(device string, output chan uint64) {
 		options := &serial.Mode{
@@ -81,6 +107,7 @@ func main() {
 				}
 				if diff < time.Second {
 					fmt.Println("event")
+					go beep()
 				}
 			}
 		case out, ok := <-output2:
@@ -97,6 +124,7 @@ func main() {
 				}
 				if diff < time.Second {
 					fmt.Println("event")
+					go beep()
 				}
 			}
 		}
