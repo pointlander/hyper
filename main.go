@@ -35,7 +35,7 @@ func main() {
 	}
 
 	beep := func() {
-		two := sr.N(500 * time.Millisecond)
+		two := sr.N(250 * time.Millisecond)
 
 		ch := make(chan struct{})
 		sounds := []beep.Streamer{
