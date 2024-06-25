@@ -70,12 +70,12 @@ func main() {
 		}
 
 		for running {
-			data := make([]byte, 2)
+			data := make([]byte, 4)
 			_, err = port.Read(data)
 			if err != nil {
 				panic(err)
 			}
-			output <- (uint64(data[0]) << 8) | uint64(data[1])
+			output <- (uint64(data[0]) << 24) | (uint64(data[1]) << 16) | (uint64(data[2]) << 8) | uint64(data[3])
 		}
 
 		_, err = port.Write([]byte("<HEARTBEAT0>>"))
