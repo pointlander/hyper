@@ -15,6 +15,9 @@ import (
 	"github.com/gopxl/beep/generators"
 	"github.com/gopxl/beep/speaker"
 	"go.bug.st/serial"
+	"gonum.org/v1/plot"
+	"gonum.org/v1/plot/plotter"
+	"gonum.org/v1/plot/vg"
 )
 
 func main() {
@@ -91,6 +94,8 @@ func main() {
 	output2 := make(chan uint64, 8)
 	event2 := time.Time{}
 	go process("/dev/ttyUSB1", output2)
+	last := time.Now()
+	var values plotter.Values
 	for {
 		select {
 		case out, ok := <-output1:
@@ -108,6 +113,8 @@ func main() {
 				if diff < time.Second {
 					fmt.Println("event")
 					go beep()
+					values = append(values, float64(event1.Sub(last)))
+					last = event1
 				}
 			}
 		case out, ok := <-output2:
@@ -125,11 +132,26 @@ func main() {
 				if diff < time.Second {
 					fmt.Println("event")
 					go beep()
+					values = append(values, float64(event2.Sub(last)))
+					last = event2
 				}
 			}
 		}
 		if output1 == nil && output2 == nil {
 			break
 		}
+	}
+
+	p := plot.New()
+	p.Title.Text = "histogram plot"
+
+	hist, err := plotter.NewHist(values, 20)
+	if err != nil {
+		panic(err)
+	}
+	p.Add(hist)
+
+	if err := p.Save(8*vg.Inch, 8*vg.Inch, "hist.png"); err != nil {
+		panic(err)
 	}
 }
